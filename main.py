@@ -1,58 +1,50 @@
-import openai
-import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from flask import Flask
-import threading
-import os
+        import openai
+        from telegram import Update
+        from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-# 🔹 API Keys Setup
-TELEGRAM_BOT_TOKEN = "7727943124:AAHNMewJvkC82n1MbpM5jdg38fJtW8lZf4c"  # 🔹 Yahan apna bot token daalo
-OPENAI_API_KEY = "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"  # 🔹 Yahan apni OpenAI API key daalo
+        # Directly set your OpenAI API key here
+        openai.api_key = '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'  # Replace with your OpenAI API Key
 
-openai.api_key = OPENAI_API_KEY
+        # Directly set your Telegram Bot Token here
+        TELEGRAM_TOKEN = '7727943124:AAHNMewJvkC82n1MbpM5jdg38fJtW8lZf4c'  # Replace with your Telegram Bot Token
 
-# 🔹 AI Response Function
-def ai_response(text):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Ya "gpt-4" agar chahiye
-        messages=[{"role": "user", "content": text}]
-    )
-    return response["choices"][0]["message"]["content"]
+        # Define the /start command
+        async def start(update: Update, context):
+            await update.message.reply_text('Hello! I am your ChatGPT-powered bot. Ask me anything!')
 
-# 🔹 /start Command
-def start(update, context):
-    update.message.reply_text("Baburao AI tayaar hai! Kuch bhi puchho.")
+        # Define a function to interact with OpenAI API (ChatGPT)
+        async def chatgpt_response(update: Update, context):
+            user_message = update.message.text  # Get the message text from the user
 
-# 🔹 Handle Messages
-def handle_message(update, context):
-    user_message = update.message.text
-    response = ai_response(user_message)
-    update.message.reply_text(response)
+            try:
+                # Call OpenAI API to get a response from GPT
+                response = openai.Completion.create(
+                    model="text-davinci-003",  # Or use "gpt-4" if you have access
+                    prompt=user_message,
+                    max_tokens=150,
+                    temperature=0.7
+                )
 
-# 🔹 Flask Web Server (To Keep Bot Alive)
-app = Flask(__name__)
+                # Extract the response from OpenAI
+                gpt_message = response.choices[0].text.strip()
 
-@app.route('/')
-def home():
-    return "Baburao AI is running!"
+                # Send the GPT response back to the user
+                await update.message.reply_text(gpt_message)
 
-def run_flask():
-    app.run(host='0.0.0.0', port=8080)
+            except Exception as e:
+                await update.message.reply_text(f"Sorry, there was an error: {str(e)}")
 
-# 🔹 Main Function (Start Bot)
-def main():
-    updater = Updater(TELEGRAM_BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+        # Main function to set up the bot
+        def main():
+            # Create the Application instance
+            application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+            # Add handlers for /start and text messages
+            application.add_handler(CommandHandler("start", start))
+            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chatgpt_response))
 
-    # Flask Web Server Thread
-    threading.Thread(target=run_flask).start()
+            # Run the bot
+            application.run_polling()
 
-    # Start Telegram Bot
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+        if __name__ == '__main__':
+            main()
