@@ -5,10 +5,15 @@ from flask import Flask
 import threading
 import os
 
-# 🔹 API Keys Setup
-TELEGRAM_BOT_TOKEN = "7727943124:AAHNMewJvkC82n1MbpM5jdg38fJtW8lZf4c"  # 🔹 Yahan apna bot token daalo
-OPENAI_API_KEY = "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"  # 🔹 Yahan apni OpenAI API key daalo
+# 🔹 API Keys from Environment Variables
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# 🔹 Check if API keys are set
+if not TELEGRAM_BOT_TOKEN or not OPENAI_API_KEY:
+    raise ValueError("Please set TELEGRAM_BOT_TOKEN and OPENAI_API_KEY as environment variables.")
+
+# 🔹 Set OpenAI API Key
 openai.api_key = OPENAI_API_KEY
 
 # 🔹 AI Response Function
